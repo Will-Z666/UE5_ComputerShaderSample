@@ -1,0 +1,54 @@
+#include "/Engine/Public/Platform.ush"
+
+RWTexture2D<float3> RenderTarget;
+// Seed the random number generator
+float Seed = 0.0f;
+Texture2D<float3> InputTexture;
+
+
+float2 hash(float2 p)
+{
+    //p = mod(p, 4.0); // tile
+    p = float2(dot(p, float2(127.1, 311.7)),
+             dot(p, float2(269.5, 183.3)));
+    return frac(sin(p) * 18.5453);
+}
+
+// return distance, and cell id
+float2 voronoi(in float2 x)
+{
+    float2 n = floor(x);
+    float2 f = frac(x);
+
+    float3 m = float3(8.0, 8.0, 8.0);
+    for (int j = -1; j <= 1; j++)
+        for (int i = -1; i <= 1; i++)
+        {
+            float2 g = float2(float(i), float(j));
+            float2 o = hash(n + g);
+      //float2  r = g - f + o;
+            float2 r = g - f + (0.5 + 0.5 * sin(Seed + 6.2831 * o));
+            float d = dot(r, r);
+            if (d < m.x)
+                m = float3(d, o);
+        }
+
+    return float2(sqrt(m.x), m.y + m.z);
+}
+
+
+[numthreads(THREADGROUPSIZE_X, THREADGROUPSIZE_Y, THREADGROUPSIZE_Z)]
+void MainComputeShader(
+                       uint3 DispatchThreadId : SV_DispatchThreadID,
+	                   uint GroupIndex : SV_GroupIndex) 
+{
+    //float2 p = InputTexture[DispatchThreadId.xy].xy;
+    float2 p = DispatchThreadId.xy / 512.0;
+    // computer voronoi patterm
+    float2 c = voronoi((14.0 + 6.0 * sin(0.2 * Seed)) * p);
+    
+    float x = c.x;
+    float y = c.y;
+    float z = 0;
+    RenderTarget[DispatchThreadId.xy] = float3(x, y, z);
+}
