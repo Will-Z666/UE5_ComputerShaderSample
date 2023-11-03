@@ -1,2 +1,2 @@
 # UE5_ComputerShaderSample
-![alt text](Capture.PNG "Screen Shot")# Pic
+![alt text](Capture.png "Screen Shot")# Pic
